@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 2
+  strategy:  #Rolling updates
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+      annotations:                     
+        prometheus.io/scrape: "true" # Allow prometheus to scrape
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics" # Metrics are exposed at this endpoint
+    spec:
+      containers:
+      - name: backend-container
+        image: my-node-backend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
+        env:
+        - name: MONGO_URI
+          value: "mongodb://mongo-service:27017/my-database"
+        readinessProbe:          # To check the readiness of the server  
+          httpGet:
+            path: /health          
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
